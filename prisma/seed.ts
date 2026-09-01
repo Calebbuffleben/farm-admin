@@ -19,10 +19,13 @@ async function main() {
     );
     return;
   }
+  if (password.length < 12) {
+    throw new Error("SEED_ADMIN_PASSWORD must be at least 12 characters.");
+  }
 
-  const existing = await prisma.adminUser.count();
-  if (existing > 0) {
-    console.log("Skip seed: admin users already exist.");
+  const existing = await prisma.adminUser.findUnique({ where: { email } });
+  if (existing) {
+    console.log(`Skip seed: ${email} already exists.`);
     return;
   }
 
