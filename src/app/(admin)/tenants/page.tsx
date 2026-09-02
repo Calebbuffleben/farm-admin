@@ -277,8 +277,21 @@ type CreateTenantResponse = {
     mode: "membership" | "invitation";
     email: string;
     inviteToken?: string;
+    inviteUrl?: string;
   };
 };
+
+function ownerInviteLink(bootstrap: {
+  inviteToken?: string;
+  inviteUrl?: string;
+}): string | null {
+  if (bootstrap.inviteUrl) return bootstrap.inviteUrl;
+  if (!bootstrap.inviteToken) return null;
+  const base = (
+    process.env.NEXT_PUBLIC_FARM_WEB_APP_URL ?? "http://localhost:3100"
+  ).replace(/\/$/, "");
+  return `${base}/accept-invite?token=${encodeURIComponent(bootstrap.inviteToken)}`;
+}
 
 function CreateTenantModal({
   onClose,
@@ -345,25 +358,25 @@ function CreateTenantModal({
               <p>
                 Convite <strong className="text-zinc-100">OWNER</strong> criado
                 para <strong className="text-zinc-100">{bootstrap.email}</strong>
-                . Envie o token abaixo para o owner aceitar no app (página{" "}
-                <em>accept-invite</em>).
+                . Envie o link abaixo — o owner abre, define a senha e entra no
+                app.
               </p>
-              {bootstrap.inviteToken ? (
+              {ownerInviteLink(bootstrap) ? (
                 <div className="space-y-2">
-                  <code className="block max-h-24 overflow-auto rounded-lg border border-zinc-700 bg-zinc-950 p-3 text-xs text-cyan-200">
-                    {bootstrap.inviteToken}
+                  <code className="block max-h-24 overflow-auto rounded-lg border border-zinc-700 bg-zinc-950 p-3 text-xs text-cyan-200 break-all">
+                    {ownerInviteLink(bootstrap)}
                   </code>
                   <button
                     type="button"
                     onClick={() => {
-                      void navigator.clipboard.writeText(
-                        bootstrap.inviteToken ?? "",
-                      );
+                      const link = ownerInviteLink(bootstrap);
+                      if (!link) return;
+                      void navigator.clipboard.writeText(link);
                       setCopied(true);
                     }}
                     className="rounded-lg border border-zinc-700 px-3 py-1.5 text-xs text-zinc-300 hover:border-zinc-600"
                   >
-                    {copied ? "Copiado!" : "Copiar token"}
+                    {copied ? "Copiado!" : "Copiar link"}
                   </button>
                 </div>
               ) : null}
