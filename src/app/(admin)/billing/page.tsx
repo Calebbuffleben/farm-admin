@@ -6,7 +6,7 @@ import { apiFetch } from "@/shared/api-client";
 import { useAuth } from "@/shared/auth-context";
 import { StatGrid } from "@/shared/admin-data-page";
 
-type Plan = "FREE" | "PRO" | "ENTERPRISE";
+type Plan = "FREE" | "STARTER" | "GROWTH" | "SCALE" | "ENTERPRISE";
 type SubscriptionStatus = "ACTIVE" | "CANCELED" | "PAST_DUE";
 type Source = "stripe" | "manual";
 
@@ -24,6 +24,9 @@ type SubRow = {
   status: SubscriptionStatus;
   maxUsers: number;
   memberCount: number;
+  pendingInvites?: number;
+  pendingPlan?: string | null;
+  seatLimitHoldReason?: string | null;
   source: Source;
   stripeCustomerId: string | null;
   stripeSubscriptionId: string | null;
@@ -85,7 +88,7 @@ export default function BillingPage() {
 
   const paidActive =
     summary?.bySubscription
-      .filter((r) => (r.plan === "PRO" || r.plan === "ENTERPRISE") && r.status === "ACTIVE")
+      .filter((r) => r.plan !== "FREE" && r.status === "ACTIVE")
       .reduce((n, r) => n + r.count, 0) ?? 0;
   const canceled =
     summary?.bySubscription
@@ -108,7 +111,7 @@ export default function BillingPage() {
             { label: "PAST_DUE", value: String(summary.pastDueCount) },
             { label: "Canceladas", value: String(canceled) },
             { label: "Cancelam no período", value: String(summary.cancelAtPeriodEndCount) },
-            { label: "MRR estimado", value: `$${summary.mrr.toFixed(0)}` },
+            { label: "MRR estimado", value: `R$ ${summary.mrr.toFixed(0)}` },
             { label: "Checkouts abandonados (30d)", value: String(summary.checkouts30d.abandoned) },
           ]}
         />
@@ -123,8 +126,10 @@ export default function BillingPage() {
         />
         <select value={plan} onChange={(e) => setPlan(e.target.value as Plan | "")} className={inputClass}>
           <option value="">Todos os planos</option>
-          <option value="FREE">FREE</option>
-          <option value="PRO">PRO</option>
+          <option value="FREE">FREE (legado)</option>
+          <option value="STARTER">STARTER</option>
+          <option value="GROWTH">GROWTH</option>
+          <option value="SCALE">SCALE</option>
           <option value="ENTERPRISE">ENTERPRISE</option>
         </select>
         <select
@@ -189,7 +194,13 @@ export default function BillingPage() {
                   <SubBadge status={row.status} />
                 </td>
                 <td className="px-4 py-3 text-zinc-300">
-                  {row.memberCount}/{row.maxUsers}
+                  {row.memberCount + (row.pendingInvites ?? 0)}/{row.maxUsers}
+                  {row.pendingPlan ? (
+                    <div className="text-[11px] text-amber-200">→ {row.pendingPlan}</div>
+                  ) : null}
+                  {row.seatLimitHoldReason ? (
+                    <div className="text-[11px] text-rose-300">hold</div>
+                  ) : null}
                 </td>
                 <td className="px-4 py-3">
                   <span
@@ -358,6 +369,7 @@ function SubscriptionDetailModal({
         <p className="mt-1 text-sm text-zinc-400">Owner: {owner?.email ?? "—"}</p>
         <p className="mt-1 text-sm text-zinc-300">
           {sub?.plan} · {sub?.status} · {String(data?.memberCount ?? "—")}/{sub?.maxUsers} assentos
+          {typeof data?.pendingInvites === "number" ? ` · ${data.pendingInvites} pendentes` : ""}
         </p>
         <div className="mt-3 space-y-1 font-mono text-[11px] text-zinc-400">
           {sub?.stripeCustomerId ? (

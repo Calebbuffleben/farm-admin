@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { apiFetch } from "@/shared/api-client";
 
 type TenantStatus = "ACTIVE" | "SUSPENDED" | "DELETED";
-type Plan = "FREE" | "PRO" | "ENTERPRISE";
+type Plan = "FREE" | "STARTER" | "GROWTH" | "SCALE" | "ENTERPRISE";
 type SubscriptionStatus = "ACTIVE" | "CANCELED" | "PAST_DUE";
 
 type TenantRow = {
@@ -30,7 +30,7 @@ type TenantListResponse = {
   items: TenantRow[];
 };
 
-const PLANS: Plan[] = ["FREE", "PRO", "ENTERPRISE"];
+const PLANS: Plan[] = ["FREE", "STARTER", "GROWTH", "SCALE", "ENTERPRISE"];
 const SUBSCRIPTION_STATUSES: SubscriptionStatus[] = [
   "ACTIVE",
   "CANCELED",
@@ -39,8 +39,10 @@ const SUBSCRIPTION_STATUSES: SubscriptionStatus[] = [
 
 const PLAN_SEATS: Record<Plan, number> = {
   FREE: 3,
-  PRO: 10,
-  ENTERPRISE: 50,
+  STARTER: 3,
+  GROWTH: 10,
+  SCALE: 25,
+  ENTERPRISE: 25,
 };
 
 export default function TenantsPage() {
